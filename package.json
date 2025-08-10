@@ -1,0 +1,39 @@
+{
+  "name": "gmailjobtracker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "worker": "node src/workers/emailProcessor.js",
+    "test-server": "node test-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "description": "Automated job application tracker that syncs Gmail emails with Notion database",
+  "keywords": [
+    "gmail",
+    "job-tracker",
+    "automation",
+    "notion",
+    "email-parsing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^1.13.0",
+    "@google/generative-ai": "^0.24.1",
+    "@notionhq/client": "^4.0.1",
+    "bullmq": "^5.56.9",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "googleapis": "^155.0.0",
+    "ioredis": "^5.7.0",
+    "node-cron": "^4.2.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
