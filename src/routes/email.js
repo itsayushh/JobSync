@@ -13,7 +13,7 @@ const parsingService = new ParsingService();
  */
 router.post('/sync', async (req, res) => {
   try {
-    const { daysBack = 7, maxResults = 50 } = req.body;
+    const { daysBack = 1, maxResults = 15 } = req.body;
     
     console.log(`Starting manual email sync: ${maxResults} emails, ${daysBack} days back`);
     

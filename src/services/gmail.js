@@ -19,9 +19,9 @@ class GmailService {
   /**
    * Get job-related emails from Gmail
    */
-  async getJobEmails(maxResults = 30, daysBack = 30) {
+  async getJobEmails(maxResults = 15, daysBack = 1) {
     try {
-      // Calculate date for filtering (30 days back)
+      // Calculate date for filtering (1 days back)
       const dateFilter = new Date();
       dateFilter.setDate(dateFilter.getDate() - daysBack);
       const dateString = dateFilter.toISOString().split('T')[0].replace(/-/g, '/');
@@ -164,6 +164,7 @@ class GmailService {
     const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
+      prompt: 'consent',
       scope: scopes,
     });
   }
