@@ -128,61 +128,63 @@ class NotionService {
    */
   buildNotionProperties(data, isUpdate = false) {
     console.log(`Building Notion properties for ${isUpdate ? 'update' : 'creation'}:`, data);
-    
-    // Basic properties that should exist in any job tracking database
+
     const properties = {
       'Company': {
-        "title": [
+        title: [
           {
-            "text": {
-              "content": data.company || 'Unknown',
+            text: {
+              content: data.company || 'Unknown',
             },
           },
         ],
       },
       'Role': {
-        "rich_text": [
+        rich_text: [
           {
-            "text": {
-              "content": data.role || 'Not specified',
+            text: {
+              content: data.role || 'Not specified',
             },
           },
         ],
       },
       'Status': {
-        "rich_text": [
-          {
-            "text": {
-              "content": data.status || 'Applied',
-            },
-          },
-        ],
+        status: {
+          name: data.status || 'Applied',
+        },
       },
       'Platform': {
-        "rich_text": [
+        rich_text: [
           {
-            "text": {
-              "content": data.platform || 'Not specified',
+            text: {
+              content: data.platform || 'Not specified',
             },
           },
         ],
+      },
+      'Last Response Date': {
+        date: {
+          start: data.lastResponseDate || null,
+        },
       },
       'Gmail Link': {
-        'rich_text': [
-          {
-            'text': {
-              'content': data.gmailLink || 'Not specified',
-            },
-          },
-        ],
+        url: data.gmailLink || null, // URL type property
       },
     };
-
-    // Only add optional properties if they don't cause errors
-    // For now, let's skip the optional properties that are causing issues
     
+    if (!isUpdate) {
+      properties['Application Date'] = {
+        date: {
+          start: data.applicationDate || null,
+        },
+      };
+    }
+
+
+
     return properties;
   }
+
 
   /**
    * Get all applications from database
@@ -234,24 +236,16 @@ class NotionService {
           'Status': {
             select: {
               options: [
-                { name: 'Applied', color: 'blue' },
-                { name: 'Interview', color: 'yellow' },
+                { name: 'Applied', color: 'orange' },
+                { name: 'Interview', color: 'blue' },
                 { name: 'Offer', color: 'green' },
+                { name: 'Offer Rejected', color: 'pink' },
                 { name: 'Rejected', color: 'red' },
               ],
             },
           },
           'Platform': {
-            select: {
-              options: [
-                { name: 'LinkedIn', color: 'blue' },
-                { name: 'Indeed', color: 'green' },
-                { name: 'Glassdoor', color: 'orange' },
-                { name: 'Naukri', color: 'purple' },
-                { name: 'Direct', color: 'gray' },
-                { name: 'Other', color: 'default' },
-              ],
-            },
+            rich_text: {},
           },
           'Application Date': {
             date: {},
@@ -284,7 +278,7 @@ class NotionService {
   async getDatabaseStats() {
     try {
       const applications = await this.getAllApplications();
-      
+
       const stats = {
         total: applications.length,
         byStatus: {},
@@ -297,15 +291,15 @@ class NotionService {
 
       applications.forEach(app => {
         const props = app.properties;
-        
+
         // Count by status
         const status = props.Status?.select?.name || 'Unknown';
         stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
-        
+
         // Count by platform
         const platform = props.Platform?.select?.name || 'Unknown';
         stats.byPlatform[platform] = (stats.byPlatform[platform] || 0) + 1;
-        
+
         // Count recent applications
         const appDate = props['Application Date']?.date?.start;
         if (appDate && new Date(appDate) > oneWeekAgo) {
@@ -320,7 +314,7 @@ class NotionService {
     }
   }
 
-  async getDatabaseById(){
+  async getDatabaseById() {
 
   }
 }

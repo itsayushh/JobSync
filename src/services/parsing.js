@@ -39,7 +39,7 @@ class ParsingService {
       role: this.extractRole(subject, body),
       platform: this.extractPlatform(from, body, subject),
       status: this.extractStatus(subject, body),
-      applicationDate: this.extractApplicationDate(body, date),
+      applicationDate: date,
       lastResponseDate: date,
     };
   }
@@ -125,62 +125,57 @@ class ParsingService {
     return emailDate;
   }
 
+  preprocessEmailText(text) {
+  return text
+    .replace(/<[^>]*>/g, ' ')           // remove HTML tags
+    .replace(/https?:\/\/\S+/g, '')      // remove URLs
+    .replace(/[\r\n]{2,}/g, '\n')        // collapse multiple newlines
+    .split('\n')
+    .filter(line => line.length < 300)   // skip very long lines
+    .slice(0, 20)                         // only keep first 20 lines
+    .join('\n')
+    .trim();
+}
+
+
   async enhanceWithGemini(emailData, regexResult) {
-    try {
-      const prompt = `
-You are an expert at analyzing job-related emails. Analyze this email and provide structured information.
+  try {
+    
+    const prompt = `
+Analyze this email for job info and try to extract company, role, status, platform, and confidence. Output ONLY JSON.
 
-Email Details:
-- Subject: ${emailData.subject}
-- From: ${emailData.from}
+SUBJECT: ${emailData.subject}
+FROM: ${emailData.from}
+BODY (truncated): ${emailData.body}
 
-Initial Analysis (from regex):
-- Company: ${regexResult.company}
-- Role: ${regexResult.role}
-- Platform: ${regexResult.platform}
-- Status: ${regexResult.status}
-
-Instructions:
-1. Determine if this is actually a job-related email (hiring, application, interview, etc.)
-2. Extract or correct the company name
-3. Extract or correct the job role/position
-4. Determine the application status: Applied, Interview, Offer, or Rejected
-5. Identify the platform (LinkedIn, Indeed, Direct, etc.)
-
-Respond in this exact JSON format:
+Return JSON:
 {
   "isJobRelated": true/false,
-  "company": "company name",
-  "role": "job role",
+  "company": "...",
+  "role": "...",
   "status": "Applied|Interview|Offer|Rejected",
-  "platform": "platform name",
+  "platform": "...",
   "confidence": 0.0-1.0
 }
 `;
 
-      const result = await this.model.generateContent(prompt);
-      const text = result.response.text();
+    const result = await this.model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.isJobRelated && parsed.confidence > 0.6) {
-          return {
-            company: parsed.company || regexResult.company,
-            role: parsed.role || regexResult.role,
-            status: parsed.status || regexResult.status,
-            platform: parsed.platform || regexResult.platform,
-            isJobRelated: parsed.isJobRelated,
-            confidence: parsed.confidence,
-          };
-        }
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.isJobRelated && parsed.confidence > 0.6) {
+        return { ...regexResult, ...parsed };
       }
-      return null;
-    } catch (error) {
-      console.error('Error with Gemini processing:', error);
-      return regexResult;
     }
+    return null;
+  } catch (error) {
+    console.error('Error with Gemini processing:', error);
+    return regexResult;
   }
+}
+
 
   isGenericSender(name) {
     const generic = [
